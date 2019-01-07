@@ -15,7 +15,7 @@ echo "Getting development data"
 
 #Spanish A
 
-SPANISH_A_ZIP="$DATA_DIR/dev_spanish_a.zip" 
+SPANISH_A_ZIP="$DATA_DIR/dev_spanish_a.zip"
 ENGLISH_A_ZIP="$DATA_DIR/dev_english_a.zip"
 
 wget $URL_SPANISH_A -O $SPANISH_A_ZIP
@@ -24,8 +24,8 @@ wget $URL_ENGLISH_A -O $ENGLISH_A_ZIP
 7z x $SPANISH_A_ZIP -o$DATA_DIR -p$SPANISH_PASS
 7z x $ENGLISH_A_ZIP -o$DATA_DIR -p$ENGLISH_PASS
 
-mv $DATA_DIR/public_development_es $DATA_DIR/dev_es
-mv $DATA_DIR/public_development_en $DATA_DIR/dev_en
+mv $DATA_DIR/public_development_es $DATA_DIR/es
+mv $DATA_DIR/public_development_en $DATA_DIR/en
 
 rm $SPANISH_A_ZIP
 rm $ENGLISH_A_ZIP
