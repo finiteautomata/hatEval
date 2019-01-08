@@ -27,7 +27,7 @@ class Tokenizer(object):
     """
     """
 
-    def __init__(self, lang='es', stem=False, lem=True, ht=True, emoji=False, rdup=False):
+    def __init__(self, lang='es', stem=False, lem=True, ht=True, emoji=False, rdup=False, neg=True):
         """
         es -- language ('es' or 'en')
         stem -- do stemming
@@ -35,6 +35,7 @@ class Tokenizer(object):
         ht -- filter hashtags
         emoji -- replace emojis with polarity markers
         rdup -- remove consecutive duplicate user mentions and URLs
+        neg -- handle negations
         """
         self._lang = lang
         if stem and not lem:
@@ -58,13 +59,17 @@ class Tokenizer(object):
             self._emoji = None
         self._tokenizer = TweetTokenizer()
         self._tokenizer._tokenizer.reduce_len = True  # FIXME
-        self._stopwords = set(stopwords.words('spanish' if lang == 'es' else 'english')) - negation_tokens
+        self._stopwords = set(stopwords.words('spanish' if lang == 'es' else 'english'))
+        if neg:
+            assert lang == 'es', 'English negation handling not supported. Use neg=False.'
+            self._stopwords = self._stopwords - negation_tokens
         if lem and lang == 'es':
             # avoid this with embeddings (only for reproducibility):
             self._stopwords.update({'haber', 'ser', 'hacer'})
 
         self._ht = ht
         self._rdup = rdup
+        self._neg = neg
 
     def __call__(self, doc):
         tokens = self._tokenizer(doc)
@@ -110,7 +115,8 @@ class Tokenizer(object):
             tokens = fixed_lemmas
 
         tokens = [t for t in tokens if t not in self._stopwords]
-        tokens = handle_negations(tokens)
+        if self._neg:
+            tokens = handle_negations(tokens)
         tokens = [t for t in tokens if not punct.match(t)]
         if self._stemmer:
             tokens = [self._stemmer.stem(t) for t in tokens]  # also lowercases
