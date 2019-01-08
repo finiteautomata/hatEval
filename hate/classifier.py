@@ -9,7 +9,9 @@ class HateClassifier(SentimentClassifier):
         super().__init__(**kwargs)
 
     def build_bow_tokenizer(self):
-        return Tokenizer(lang=self._lang, rdup=True)
+        neg = self._lang == 'es'  # only handle negations in spanish
+        return Tokenizer(lang=self._lang, rdup=True, neg=neg)
 
     def build_emb_tokenizer(self):
-        return Tokenizer(lang=self._lang, lem=False)
+        neg = self._lang == 'es'  # only handle negations in spanish
+        return Tokenizer(lang=self._lang, lem=False, neg=neg)
