@@ -2,13 +2,14 @@
 
 
 Usage:
-  generate_synthetic_tweets.py [options] --file <file> --out <out_file> --input-lang <input_lang> --mid-lang <mid_lang>
+  generate_synthetic_tweets.py [options] --file <file> --input-lang <input_lang> --mid-lang <mid_lang>
 
  Options:
-    --num-threads <numthreads>          Num of threads to use [default: 50]
-    --output-file <output_path>           Output path.
-        If not provided, generate a file in TASS/synthetic/<file>
+    --provider <provider>          Translator to use [default: mymemory]
+    --out-file <out_path>          Where to save the translations
+    --email <email>                Email of account (only MyMemory)
 """
+
 import json
 import os
 import time
@@ -19,7 +20,8 @@ import re
 import pandas as pd
 import csv
 from json import JSONDecodeError
-from translate import Translator
+import translate
+import googletrans
 from nltk.tokenize import TweetTokenizer
 
 
@@ -30,7 +32,42 @@ emoticon_re = re.compile(r"(?u)"
 )
 
 
+class UsageLimit(Exception):
+    pass
+
+
+class GoogleTranslator:
+    def __init__(self, source_lang, to_lang, **kwargs):
+        self.source_lang = source_lang
+        self.to_lang = to_lang
+        self.translator = googletrans.Translator()
+
+    def translate(self, text):
+        try:
+            return self.translator.translate(
+                text, dest=self.to_lang, src=self.source_lang).text
+        except JSONDecodeError as e:
+            raise UsageLimit(e)
+
+
+class MyMemoryTranslator:
+    def __init__(self, source_lang, to_lang, **kwargs):
+        self.source_lang = source_lang
+        self.to_lang = to_lang
+        self.translator = translate.Translator(
+            from_lang=source_lang, to_lang=to_lang, **kwargs
+        )
+
+    def translate(self, text):
+        translation = self.translator.translate(text)
+
+        if "MYMEMORY WARNING" in translation:
+            raise UsageLimit(translation)
+        return translation
+
+
 tokenize = TweetTokenizer(reduce_len=True, strip_handles=True).tokenize
+
 
 def clean_tweet(text):
     """
@@ -42,47 +79,8 @@ def clean_tweet(text):
 
     return clean_tweet
 
-class UsageLimit(Exception):
-    pass
 
-
-def double_translate(text, source_lang, intermediate_lang):
-    """
-    Double translates tweets.
-
-    Raises SystemErrorS
-    Arguments:
-    ---------
-
-    text: string
-        text to be double translated
-
-    source_lang: string
-        Source language
-
-    intermediate_lang: string
-        Intermediate language
-
-    """
-    email = "jmperez.85@gmail.com"
-    translator = Translator(
-        from_lang=source_lang, to_lang=intermediate_lang,
-        email=email
-    )
-    back_translator = Translator(
-        from_lang=intermediate_lang, to_lang=source_lang,
-        email=email
-    )
-
-    intermediate_tweet = translator.translate(text)
-    new_tweet = back_translator.translate(intermediate_tweet)
-
-    if ("MYMEMORY WARNING" in intermediate_tweet) or ("MYMEMORY WARNING" in new_tweet):
-        raise UsageLimit(intermediate_tweet)
-    return new_tweet, intermediate_tweet
-
-
-def translate_tweets(tweets, out_df, input_lang, middle_lang):
+def translate_tweets(tweets, out_df, translator, back_translator):
     translated_count = 0
     new_tweets = []
     for (tweet_id, tweet) in tweets.iterrows():
@@ -90,10 +88,9 @@ def translate_tweets(tweets, out_df, input_lang, middle_lang):
             if tweet_id in out_df.index:
                 print("{} tweet already translated - skip".format(tweet_id))
                 continue
-
             clean_text = clean_tweet(tweet["text"])
-            new_text, intermediate = double_translate(
-                clean_text, input_lang, middle_lang)
+            intermediate = translator.translate(clean_text)
+            new_text = back_translator.translate(intermediate)
 
             new_row = tweet.copy()
             new_row["text"] = new_text
@@ -127,15 +124,15 @@ def save_data(out_df, out_file):
     print("{} synthetic tweets saved to {}".format(len(out_df), out_file))
 
 
-if __name__ == '__main__':
-    opts = docopt(__doc__)
-    file_path = opts['<file>']
-    input_lang = opts['<input_lang>']
-    middle_lang = opts['<mid_lang>']
-    out_file = opts['<out_file>']
+def get_outfile_path(opts, file_path, middle_lang):
+    if opts['--out-file']:
+        return opts['--out-file']
+    else:
+        base, ext = os.path.splitext(file_path)
+        return base + ".synth.{}{}".format(middle_lang, ext)
 
-    df = pd.read_table(file_path, index_col="id")
 
+def create_out_df(out_file):
     try:
         out_df = pd.read_table(out_file, index_col="id")
     except FileNotFoundError as e:
@@ -147,18 +144,54 @@ if __name__ == '__main__':
 
         out_df.set_index("id", inplace=True)
 
+    return out_df
+
+def create_translators(input_lang, middle_lang, provider, **kwargs):
+    if provider == 'mymemory':
+        klass = MyMemoryTranslator
+    elif provider == 'google':
+        klass = GoogleTranslator
+
+    forward = klass(
+        source_lang=input_lang, to_lang=middle_lang, **kwargs
+    )
+
+    back = klass(
+        source_lang=middle_lang, to_lang=input_lang, **kwargs
+    )
+
+    return forward, back
+
+
+if __name__ == '__main__':
+    opts = docopt(__doc__)
+    print(opts)
+    file_path = opts['<file>']
+    input_lang = opts['<input_lang>']
+    middle_lang = opts['<mid_lang>']
+    provider = opts['--provider']
+    out_file = get_outfile_path(opts, file_path, middle_lang)
+
+    df = pd.read_table(file_path, index_col="id")
+    out_df = create_out_df(out_file)
     """
     We translate a small number at a time to avoid banning :-(
     """
-    sample_number = 500
-    df = df.sample(n=sample_number)
+    sample_number = 200
+
+    non_translated = df[~df.index.isin(out_df.index)].sample(n=sample_number)
 
     print("Translating file {} ({} entries)".format(file_path, len(df)))
     print("Saving to file {} ({} entries already found)".format(
            out_file, len(out_df)))
     print("Double translation from '{}' to '{}'".format(
           input_lang, middle_lang))
+    print("Using provider: {}".format(provider))
 
-    out_df = translate_tweets(df, out_df, input_lang, middle_lang)
+    translator, back_translator = create_translators(
+        input_lang, middle_lang, provider, email=opts["--email"]
+    )
+    out_df = translate_tweets(
+        non_translated, out_df, translator, back_translator)
 
     save_data(out_df, out_file)
