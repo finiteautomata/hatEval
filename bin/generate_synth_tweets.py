@@ -19,7 +19,7 @@ import re
 import pandas as pd
 import csv
 from json import JSONDecodeError
-from googletrans import Translator
+from translate import Translator
 from nltk.tokenize import TweetTokenizer
 
 
@@ -42,11 +42,15 @@ def clean_tweet(text):
 
     return clean_tweet
 
+class UsageLimit(Exception):
+    pass
+
 
 def double_translate(text, source_lang, intermediate_lang):
     """
-    Double translates tweet
+    Double translates tweets.
 
+    Raises SystemErrorS
     Arguments:
     ---------
 
@@ -58,14 +62,23 @@ def double_translate(text, source_lang, intermediate_lang):
 
     intermediate_lang: string
         Intermediate language
+
     """
-    translator = Translator()
-    intermediate_tweet = translator.translate(
-        text, dest=intermediate_lang, src=source_lang).text
+    email = "jmperez.85@gmail.com"
+    translator = Translator(
+        from_lang=source_lang, to_lang=intermediate_lang,
+        email=email
+    )
+    back_translator = Translator(
+        from_lang=intermediate_lang, to_lang=source_lang,
+        email=email
+    )
 
-    new_tweet = translator.translate(
-        intermediate_tweet, dest=source_lang, src=intermediate_lang).text
+    intermediate_tweet = translator.translate(text)
+    new_tweet = back_translator.translate(intermediate_tweet)
 
+    if ("MYMEMORY WARNING" in intermediate_tweet) or ("MYMEMORY WARNING" in new_tweet):
+        raise UsageLimit(intermediate_tweet)
     return new_tweet, intermediate_tweet
 
 
@@ -94,14 +107,11 @@ def translate_tweets(tweets, out_df, input_lang, middle_lang):
             print("Intermediate: {}\n".format(intermediate))
             print("Double-Translated: {}\n".format(new_text))
             print("\n"*2)
-        except JSONDecodeError as e:
+        except UsageLimit as e:
             """ This error usually marks rate limit - stop """
             print(("=" * 80))
-            print(tweet['text'])
             print(e)
-            print("Sleeping")
-            time.sleep(15)
-            continue
+            break
 
     print("{} new tweets".format(len(new_tweets)))
     if len(new_tweets) > 0:
