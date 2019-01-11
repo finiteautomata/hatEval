@@ -1,4 +1,4 @@
-from csv import DictReader
+from csv import DictReader, QUOTE_NONE
 
 
 class CorpusReader:
@@ -7,7 +7,7 @@ class CorpusReader:
         self.filename = filename
 
         file = open(filename)
-        reader = DictReader(file, delimiter='\t')
+        reader = DictReader(file, delimiter='\t', quoting=QUOTE_NONE)
         self.entries = list(reader)
 
     def X(self):
