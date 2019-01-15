@@ -74,7 +74,7 @@ def calculate_metrics(y_true, y_pred):
 
 def print_evaluation(model, tweets, y):
     loss, accuracy = model.evaluate(tweets, y)
-    y_pred = model.predict_classes(tweets).reshape(-1)
+    y_pred = model.predict(tweets) >= 0.5
 
     precision, recall, f1 = calculate_metrics(
         y, y_pred
