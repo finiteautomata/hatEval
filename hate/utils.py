@@ -85,3 +85,24 @@ def print_evaluation(model, tweets, y):
     print("Recall      : {:.4f}".format(recall))
     print("F1          : {:.4f}".format(f1))
 
+
+    
+def load_embedding(path):
+    """
+    Load embedding from .vec file
+    """
+    word_to_vec = {}
+
+    with open(path) as f:
+        for line in f:
+            values = line.split()
+            word = values[0]
+            try:
+                vec = np.asarray(values[1:], dtype="float32")
+            except:
+                print("Problema con la sig línea:")
+                print(values[:10])
+                word = values[1]
+                vec = np.asarray(values[2:], dtype="float32")
+            word_to_vec[word] = vec
+    return word_to_vec
