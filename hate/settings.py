@@ -16,9 +16,11 @@ tree_tagger_params_path ={
 corpora_root = '/home/francolq/hatEval/HATEVAL'
 corpora = {
     'trial_en': CorpusReader(join(corpora_root, 'public_trial/trial_en.tsv')),
-    'trial_es': CorpusReader(join(corpora_root, 'public_trial/trial_en.tsv')),
+    'trial_es': CorpusReader(join(corpora_root, 'public_trial/trial_es.tsv')),
     'train_en': CorpusReader(join(corpora_root, 'A/public_development_en/train_en.tsv')),
     'dev_en': CorpusReader(join(corpora_root, 'A/public_development_en/dev_en.tsv')),
     'train_es': CorpusReader(join(corpora_root, 'A/public_development_es/train_es.tsv')),
     'dev_es': CorpusReader(join(corpora_root, 'A/public_development_es/dev_es.tsv')),
+    'test_en': CorpusReader(join(corpora_root, 'public_test_en/test_en.tsv')),
+    'test_es': CorpusReader(join(corpora_root, 'public_test_es/test_es.tsv')),
 }

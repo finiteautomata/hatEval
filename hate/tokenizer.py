@@ -1,10 +1,18 @@
 import re
+import warnings
 
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 
-import treetaggerwrapper
-import spacy
+try:
+    import treetaggerwrapper
+except ModuleNotFoundError:
+    warnings.warn('TreeTagger not installed. Lemmatization not available.')
+    treetaggerwrapper = None
+try:
+    import spacy
+except ModuleNotFoundError:
+    pass
 
 from embeddings.tokenizer import TweetTokenizer
 from sentiment.negation import handle_negations, negation_tokens
@@ -42,7 +50,7 @@ class Tokenizer(object):
             self._stemmer = SnowballStemmer('spanish' if lang == 'es' else 'english')
         else:
             self._stemmer = None
-        if lem:
+        if lem and treetaggerwrapper:
             # self._nlp = spacy.load('es', disable=['tagger', 'parser', 'ner'])
             tagger_config = {
                 'TAGLANG': lang,
@@ -51,6 +59,7 @@ class Tokenizer(object):
             }
             self._nlp = treetaggerwrapper.TreeTagger(**tagger_config)
         else:
+            lem = False
             self._nlp = None
         if emoji:
             filename = 'emoji/Emoji Sentiment Ranking 1.0/Emoji_Sentiment_Data_v1.0.csv'
