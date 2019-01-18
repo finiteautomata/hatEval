@@ -2,6 +2,7 @@ import unidecode
 from nltk.tokenize import TweetTokenizer
 from nltk.stem import SnowballStemmer
 
+
 class Tokenizer:
     """
     Tokenizer for tweets based on NLTK's Tokenizer + Stemming

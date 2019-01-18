@@ -23,7 +23,6 @@ gast==0.2.0
 googletrans==2.4.0
 grpcio==1.17.1
 h5py==2.8.0
--e git+git@github.com:finiteautomata/hatEval.git@5f50466fdbb78aa2eb162dc35e2ef44f7ba5fda4#egg=hatEval
 identify==1.1.8
 idna==2.8
 importlib-metadata==0.8
