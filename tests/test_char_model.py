@@ -42,4 +42,13 @@ class CharModelTest(unittest.TestCase):
         model.fit(X, y, validation_data=(X_val, y_val), epochs=2)
 
     def test_it_can_predict(self):
-        pass
+        model = CharModel(vocab_size=4, max_charlen=10)
+
+        X = ["Esto no es agresivo", "Esto sí es agresivo"]
+        y = np.array([0, 1]).reshape(-1, 1)
+
+        model.compile(loss='binary_crossentropy', optimizer='adam',
+                      metrics=['accuracy'])
+
+        model.fit(X, y, epochs=2)
+        self.assertEqual(model.predict(X).shape, (2, 1))

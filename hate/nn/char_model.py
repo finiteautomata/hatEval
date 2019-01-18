@@ -60,3 +60,10 @@ class CharModel(keras.Model):
             val_data = (X_val, y_val)
 
         super().fit(X_train, y, validation_data=val_data, **kwargs)
+
+    def predict(self, X, **kwargs):
+        X = self._preprocess(X)
+        X = self._char_tokenizer.texts_to_sequences(X)
+        X = pad_sequences(X, self._max_charlen)
+
+        return super().predict(X, **kwargs)
