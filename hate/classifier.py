@@ -8,9 +8,7 @@ from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBo
 from sklearn import metrics
 
 from hate.tokenizer import Tokenizer
-from sentiment.tokenizer import SentimentTokenizer
-from sentiment.embeddings import SentenceVectorizer, WeightedSentenceVectorizer
-from embeddings.tokenizer import TweetTokenizer
+from hate.embeddings import SentenceVectorizer, WeightedSentenceVectorizer
 
 
 classifiers = {
@@ -90,7 +88,7 @@ default_emb_params = {
 class HateClassifier(object):
 
     def __init__(self, lang='en', clf='svm', bow=True, bow_params=None, boc=False, boc_params=None,
-                 emb_params=None, clf_params=None, embeddings=None,
+                 emb=False, emb_params=None, clf_params=None,
                  test_binarize=True):
         """
         lang -- language ('en' or 'es') (default: 'en').
@@ -99,9 +97,9 @@ class HateClassifier(object):
         bow_params -- bag-of-words vectorizer parameters.
         boc --  whether to use bag-of-characters (default: False).
         boc_params -- bag-of-characters vectorizer parameters.
+        emb -- whether to use embeddings (default: False).
         emb_params -- embedding vectorizer parameters.
         clf_params -- classifier parameters.
-        embeddings -- filename for file with word embeddings.
         test_binarize -- binarize embeddings only on test (not on train).
         """
         self._lang = lang
@@ -126,12 +124,11 @@ class HateClassifier(object):
             vects.append(('boc_vect', boc_vect))
             transformer_weights['boc_vect'] = 1.0
 
-        if embeddings:
+        if emb:
             self._test_binarize = test_binarize
 
             emb_params = emb_params or default_emb_params
             self._e_vect = e_vect = WeightedSentenceVectorizer(
-                embeddings,
                 tokenizer=self.build_emb_tokenizer(),
                 **emb_params,
             )
