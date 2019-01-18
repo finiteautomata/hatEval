@@ -8,6 +8,14 @@ class CharModelTest(unittest.TestCase):
         model = CharModel(vocab_size=4, max_charlen=10)
         self.assertEqual(model.layers[0].input_shape, (None, 10))
 
+    def test_it_creates_with_embedding_size(self):
+        model = CharModel(vocab_size=4, max_charlen=20, embedding_dim=32)
+
+        self.assertEqual(
+            model.layers[1].output_shape,
+            (None, 20, 32)
+        )
+
     def test_it_can_be_fitted(self):
         model = CharModel(vocab_size=4, max_charlen=10)
 
