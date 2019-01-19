@@ -1,4 +1,5 @@
 from .preprocessing import Tokenizer
+from .base_model import BaseModel
 import numpy as np
 from keras.layers import (
     Input, Embedding, Dense, Dropout, Bidirectional, LSTM,
@@ -8,14 +9,13 @@ import keras
 from elmoformanylangs import Embedder
 
 
-class ElmoModel(keras.Model):
+class ElmoModel(BaseModel):
     def __init__(self, max_len, embedder, tokenize_args={},
                  recursive_class=LSTM, lstm_units=128, dropout=[0.75, 0.50],
-                 dense_units=128):
+                 dense_units=128, **kwargs):
 
         self._max_len = max_len
         self._embedder = embedder
-        self._tokenizer = Tokenizer(**tokenize_args)
         self._elmo_dim = 1024
         # Build the graph
         input_elmo = Input(shape=(max_len, self._elmo_dim), name="Elmo_Input")
@@ -25,7 +25,10 @@ class ElmoModel(keras.Model):
         output = Dense(1, activation='sigmoid', name='output')(y)
 
 
-        super().__init__(inputs=[input_elmo], outputs=[output])
+        super().__init__(
+            inputs=[input_elmo], outputs=[output],
+            tokenize_args=tokenize_args, **kwargs
+        )
 
     def preprocess_fit(self, X):
         return
@@ -44,26 +47,3 @@ class ElmoModel(keras.Model):
 
         elmo_embeddings = self._embedder.sents2elmo(padded_tokens)
         return np.array(elmo_embeddings)
-
-    def fit(self, X, y, validation_data=None, **kwargs):
-        self.preprocess_fit(X)
-
-        X_train = self.preprocess_transform(X)
-
-        val_data = None
-        if validation_data:
-            X_val = self.preprocess_transform(validation_data[0])
-            y_val = validation_data[1]
-            val_data = (X_val, y_val)
-
-        super().fit(X_train, y, validation_data=val_data, **kwargs)
-
-    def evaluate(self, X, y=None, **kwargs):
-        X = self.preprocess_transform(X)
-
-        return super().evaluate(X, y, **kwargs)
-
-    def predict(self, X, **kwargs):
-        X = self.preprocess_transform(X)
-
-        return super().predict(X, **kwargs)
