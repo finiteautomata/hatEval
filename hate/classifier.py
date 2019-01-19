@@ -38,6 +38,9 @@ default_clf_params = {
         'class_weight': 'balanced',
         'random_state': 0,
     },
+    'lrcv': {
+        'random_state': 0,
+    },
     'svm': {
         # 'penalty': 'l1',  # 'l1' or 'l2'
         # 'loss': 'squared_hinge',  # 'hinge' or 'squared_hinge'
