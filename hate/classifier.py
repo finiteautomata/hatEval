@@ -9,6 +9,7 @@ from sklearn import metrics
 
 from hate.tokenizer import Tokenizer
 from hate.embeddings import SentenceVectorizer, WeightedSentenceVectorizer
+from hate.elmo import CachedElmoVectorizer
 
 
 classifiers = {
@@ -21,6 +22,12 @@ classifiers = {
     'rf': RandomForestClassifier,
     'erf': ExtraTreesClassifier,
     'ada': AdaBoostClassifier,
+}
+
+embeddings = {
+    'fasttext': SentenceVectorizer,
+    'wfasttext': WeightedSentenceVectorizer,
+    'elmo': CachedElmoVectorizer,
 }
 
 default_clf_params = {
@@ -128,7 +135,7 @@ class HateClassifier(object):
             self._test_binarize = test_binarize
 
             emb_params = emb_params or default_emb_params
-            self._e_vect = e_vect = WeightedSentenceVectorizer(
+            self._e_vect = e_vect = embeddings[emb](
                 tokenizer=self.build_emb_tokenizer(),
                 **emb_params,
             )
