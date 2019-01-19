@@ -154,8 +154,7 @@ class HateClassifier(object):
         return Tokenizer(lang=self._lang, rdup=True, neg=neg)
 
     def build_emb_tokenizer(self):
-        neg = self._lang == 'es'  # only handle negations in spanish
-        return Tokenizer(lang=self._lang, lem=False, neg=neg)
+        return Tokenizer(lang=self._lang, lem=False, neg=False, rdup=True)
 
     def clf_params(self):
         return default_clf_params.get(self._clf, {})
