@@ -6,6 +6,7 @@ from sklearn.svm import LinearSVC, SVC
 from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier
 from sklearn import metrics
+from xgboost import XGBClassifier
 
 from hate.tokenizer import Tokenizer
 from hate.embeddings import SentenceVectorizer, WeightedSentenceVectorizer
@@ -22,6 +23,7 @@ classifiers = {
     'rf': RandomForestClassifier,
     'erf': ExtraTreesClassifier,
     'ada': AdaBoostClassifier,
+    'xgb': XGBClassifier,
 }
 
 embeddings = {
