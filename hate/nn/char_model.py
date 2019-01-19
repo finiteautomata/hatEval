@@ -37,40 +37,42 @@ class CharModel(keras.Model):
 
         super().__init__(inputs=[input_char], outputs=[output])
 
-    def _preprocess(self, X):
+    def _preprocess_text(self, X):
         tokens = map(self._tokenizer.tokenize, X)
         instances = [" ".join(seq_tokens) for seq_tokens in tokens]
 
         return instances
 
-    def fit(self, X, y, validation_data=None, **kwargs):
-        text_train = self._preprocess(X)
+    def preprocess_fit(self, X):
+        text_train = self._preprocess_text(X)
 
         self._char_tokenizer.fit_on_texts(text_train)
 
-        X_train = self._char_tokenizer.texts_to_sequences(text_train)
-        X_train = pad_sequences(X_train, self._max_charlen)
+    def preprocess_transform(self, X):
+        X_transf = self._preprocess_text(X)
+        X_transf = self._char_tokenizer.texts_to_sequences(X_transf)
+
+        return pad_sequences(X_transf, self._max_charlen)
+
+    def fit(self, X, y, validation_data=None, **kwargs):
+        self.preprocess_fit(X)
+
+        X_train = self.preprocess_transform(X)
 
         val_data = None
         if validation_data:
-            text_val = self._preprocess(validation_data[0])
-            X_val = self._char_tokenizer.texts_to_sequences(text_val)
-            X_val = pad_sequences(X_val, self._max_charlen)
+            X_val = self.preprocess_transform(validation_data[0])
             y_val = validation_data[1]
             val_data = (X_val, y_val)
 
         super().fit(X_train, y, validation_data=val_data, **kwargs)
-    
+
     def evaluate(self, X, y=None, **kwargs):
-        X = self._preprocess(X)
-        X = self._char_tokenizer.texts_to_sequences(X)
-        X = pad_sequences(X, self._max_charlen)
+        X = self.preprocess_transform(X)
 
         return super().evaluate(X, y, **kwargs)
 
     def predict(self, X, **kwargs):
-        X = self._preprocess(X)
-        X = self._char_tokenizer.texts_to_sequences(X)
-        X = pad_sequences(X, self._max_charlen)
+        X = self.preprocess_transform(X)
 
         return super().predict(X, **kwargs)
