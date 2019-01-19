@@ -91,6 +91,12 @@ default_boc_params = {
     'ngram_range': (1, 3),
 }
 
+default_svd_params = {
+    'algorithm': 'randomized',
+    'n_components': 300,
+    'random_state': 0,
+}
+
 default_emb_params = {
     'a': 0.1,
     # 'binarize': True,
@@ -103,7 +109,7 @@ class HateClassifier(object):
     def __init__(self, lang='en',
                  bow=True, bow_params=None,
                  boc=False, boc_params=None,
-                 svd=False,
+                 svd=False, svd_params=None,
                  emb=False, emb_params=None,
                  clf='svm', clf_params=None,
                  test_binarize=True):
@@ -114,6 +120,7 @@ class HateClassifier(object):
         boc --  whether to use bag-of-characters (default: False).
         boc_params -- bag-of-characters vectorizer parameters.
         svd -- whether to use svd to reduce bag-of-* dimensionality (default: False).
+        svd_params -- svd parameters.
         emb -- embeddings model, False if none (default: False).
         emb_params -- embedding vectorizer parameters.
         clf -- classifying model, one of 'svm', 'maxent', 'mnb' (default: 'svm').
@@ -143,13 +150,14 @@ class HateClassifier(object):
             transformer_weights['boc_vect'] = 1.0
 
         if svd:
+            svd_params = svd_params or default_svd_params
             if len(vects) == 1:
                 vect = vects[0][1]
             else:
                 vect = FeatureUnion(vects)
             vects = [('bag_vect', Pipeline([
                 ('vect', vect),
-                ('svd', TruncatedSVD(algorithm='randomized', n_components=300)),
+                ('svd', TruncatedSVD(**svd_params)),
             ]))]
 
         if emb:
