@@ -6,36 +6,27 @@ from keras.layers import (
     MaxPooling1D, Conv1D,
 )
 import keras
+from elmoformanylangs import Embedder
 
 
-class CharModel(keras.Model):
-    def __init__(self, vocab_size, max_charlen,
-                 tokenize_args={}, embedding_dim=64, filters=128,
-                 kernel_size=7, pooling_size=3,
-                 recursive_class=LSTM, recursive_units=128,
-                 dense_units=64, dropout=[0.75, 0.50]):
+class ElmoModel(keras.Model):
+    def __init__(self, max_len, path_to_elmo_model, tokenize_args={},
+                 recursive_class=LSTM, lstm_units=128, dropout=[0.75, 0.50],
+                 dense_units=128):
 
-        self._max_charlen = max_charlen
-        self._vocab_size = vocab_size
+        self._max_len = max_len
         self._tokenizer = Tokenizer(**tokenize_args)
-        self._char_tokenizer = KerasTokenizer(
-            num_words=vocab_size, char_level=True
-        )
-
+        self._elmo_dim = 1024
         # Build the graph
-        input_char = Input(shape=(max_charlen,), name="Char_Input")
-        x = Embedding(vocab_size, embedding_dim)(input_char)
-        x = Conv1D(filters=filters, kernel_size=kernel_size,
-                   padding='same', activation='relu')(x)
+        input_elmo = Input(shape=(max_len, self._elmo_dim), name="Elmo_Input")
+        y = Bidirectional(recursive_class(lstm_units))(input_elmo)
+        y = Dropout(dropout[0])(y)
+        y = Dense(dense_units, activation='relu', name='dense_elmo')(y)
+        output = Dense(1, activation='sigmoid', name='output')(y)
 
-        x = MaxPooling1D(pool_size=pooling_size)(x)
-        x = Bidirectional(recursive_class(recursive_units))(x)
-        x = Dropout(dropout[0])(x)
-        x = Dense(dense_units, activation='relu')(x)
-        x = Dropout(dropout[1])(x)
-        output = Dense(1, activation='sigmoid')(x)
+        self._embedder = Embedder(path_to_elmo_model)
 
-        super().__init__(inputs=[input_char], outputs=[output])
+        super().__init__(inputs=[input_elmo], outputs=[output])
 
     def _preprocess(self, X):
         tokens = map(self._tokenizer.tokenize, X)
