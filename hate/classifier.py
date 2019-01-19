@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier
 from sklearn import metrics
 from xgboost import XGBClassifier
+from sklearn.decomposition import TruncatedSVD
 
 from hate.tokenizer import Tokenizer
 from hate.embeddings import SentenceVectorizer, WeightedSentenceVectorizer
@@ -99,18 +100,23 @@ default_emb_params = {
 
 class HateClassifier(object):
 
-    def __init__(self, lang='en', clf='svm', bow=True, bow_params=None, boc=False, boc_params=None,
-                 emb=False, emb_params=None, clf_params=None,
+    def __init__(self, lang='en',
+                 bow=True, bow_params=None,
+                 boc=False, boc_params=None,
+                 svd=False,
+                 emb=False, emb_params=None,
+                 clf='svm', clf_params=None,
                  test_binarize=True):
         """
         lang -- language ('en' or 'es') (default: 'en').
-        clf -- classifying model, one of 'svm', 'maxent', 'mnb' (default: 'svm').
         bow -- whether to use bag-of-words (default: True).
         bow_params -- bag-of-words vectorizer parameters.
         boc --  whether to use bag-of-characters (default: False).
         boc_params -- bag-of-characters vectorizer parameters.
-        emb -- whether to use embeddings (default: False).
+        svd -- whether to use svd to reduce bag-of-* dimensionality (default: False).
+        emb -- embeddings model, False if none (default: False).
         emb_params -- embedding vectorizer parameters.
+        clf -- classifying model, one of 'svm', 'maxent', 'mnb' (default: 'svm').
         clf_params -- classifier parameters.
         test_binarize -- binarize embeddings only on test (not on train).
         """
@@ -136,6 +142,16 @@ class HateClassifier(object):
             vects.append(('boc_vect', boc_vect))
             transformer_weights['boc_vect'] = 1.0
 
+        if svd:
+            if len(vects) == 1:
+                vect = vects[0][1]
+            else:
+                vect = FeatureUnion(vects)
+            vects = [('bag_vect', Pipeline([
+                ('vect', vect),
+                ('svd', TruncatedSVD(algorithm='randomized', n_components=300)),
+            ]))]
+
         if emb:
             self._test_binarize = test_binarize
 
@@ -144,8 +160,8 @@ class HateClassifier(object):
                 tokenizer=self.build_emb_tokenizer(),
                 **emb_params,
             )
-            vects.append(('e_vect', e_vect))
-            transformer_weights['e_vect'] = 1.0
+            vects.append(('emb_vect', e_vect))
+            transformer_weights['emb_vect'] = 1.0
         else:
             self._e_vect = None
 
