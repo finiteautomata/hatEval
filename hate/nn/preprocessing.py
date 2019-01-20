@@ -8,11 +8,11 @@ class Tokenizer:
     Tokenizer for tweets based on NLTK's Tokenizer + Stemming
     """
     def __init__(self, stem=False, deaccent=False, alpha_only=False,
-                **kwargs):
+                 language='spanish', **kwargs):
         self._deaccent = deaccent
         self._alpha_only = alpha_only
         if stem:
-            self._stemmer = SnowballStemmer('spanish')
+            self._stemmer = SnowballStemmer(language)
         else:
             self._stemmer = None
 
