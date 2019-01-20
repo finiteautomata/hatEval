@@ -31,7 +31,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def create_model(params, embedder):
     params = params.copy()
-
+    K.clear_session()
     dropout = params.pop('dropout')
     recursive_class = params.pop('recursive_class')
     dense_last_layer = params.pop('dense_last_layer')
@@ -161,7 +161,8 @@ if __name__ == "__main__":
             del early_stopper
             gc.collect()
             K.clear_session()
-    except:
+    except Exception as e:
+        print(e)
         print("Nos quedamos sin memoria?")
 
     with open(output_path, "wb+") as f:
