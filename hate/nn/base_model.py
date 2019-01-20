@@ -25,7 +25,7 @@ class BaseModel(keras.Model):
             y_val = validation_data[1]
             val_data = (X_val, y_val)
 
-        super().fit(X_train, y, validation_data=val_data, **kwargs)
+        return super().fit(X_train, y, validation_data=val_data, **kwargs)
 
     def evaluate(self, X, y=None, **kwargs):
         X = self.preprocess_transform(X)
