@@ -24,10 +24,20 @@ class ElmoModel(BaseModel):
         y = Dense(dense_units, activation='relu', name='dense_elmo')(y)
         output = Dense(1, activation='sigmoid', name='output')(y)
 
+        tok_args = {
+            "preserve_case": False,
+            "deaccent": False,
+            "reduce_len": True,
+            "strip_handles": False,
+            "alpha_only": True,
+            "stem": False
+        }
+
+        tok_args.update(tokenize_args)
 
         super().__init__(
             inputs=[input_elmo], outputs=[output],
-            tokenize_args=tokenize_args, **kwargs
+            tokenize_args=tok_args, **kwargs
         )
 
     def preprocess_fit(self, X):
