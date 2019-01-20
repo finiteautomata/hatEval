@@ -132,7 +132,7 @@ if __name__ == "__main__":
         orig_params = params.copy()
         batch_size = params.pop('batch_size')
         model = create_model(params, embedder=embedder)
-	checkpointer = ModelCheckpoint("models/nn/cv_{}.h5", save_best_only=True, monitor='val_acc', verbose=0)
+        checkpointer = ModelCheckpoint("models/nn/cv_{}.h5", save_best_only=True, monitor='val_acc', verbose=0)
         early_stopper = EarlyStopping(monitor='val_loss', patience=15)
         history = merge_model.fit(X_train, y_train,  callbacks=[checkpointer, early_stopper],
                   validation_data=(X_dev, y_dev), epochs=300, batch_size=batch_size)
