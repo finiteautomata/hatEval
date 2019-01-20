@@ -98,6 +98,7 @@ if __name__ == "__main__":
         "char__pooling_size": [2, 3, 4],
         "char__alpha_only": [True, False],
         "char__stem": [True, False],
+        "batch_size": [32, 64, 96],
         "bow__num_words": [3000, 4000, 4500],
         "dense_last_layer": [32, 64, 128, 256],
     }
@@ -127,10 +128,12 @@ if __name__ == "__main__":
         iters = []
 
     for i, params in enumerate(param_list):
+        orig_params = params.copy()
+        batch_size = params.pop('batch_size')
         model = create_model(params, embedder=embedder)
         early_stopper = EarlyStopping(monitor='val_loss', patience=15)
         history = merge_model.fit(X_train, y_train,  callbacks=[early_stopper],
-                  validation_data=(X_dev, y_dev), epochs=300, batch_size=32)
+                  validation_data=(X_dev, y_dev), epochs=300, batch_size=batch_size)
         iter_info = {
             "number": i,
             "params": params,
