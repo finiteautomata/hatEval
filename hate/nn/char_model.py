@@ -9,7 +9,7 @@ import keras
 
 
 class CharModel(BaseModel):
-    def __init__(self, vocab_size, max_charlen,
+    def __init__(self, vocab_size=200, max_charlen=250,
                  tokenize_args={}, embedding_dim=64, filters=128,
                  kernel_size=7, pooling_size=3,
                  recursive_class=LSTM, recursive_units=128,

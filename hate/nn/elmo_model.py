@@ -22,6 +22,8 @@ class ElmoModel(BaseModel):
         y = Bidirectional(recursive_class(lstm_units))(input_elmo)
         y = Dropout(dropout[0])(y)
         y = Dense(dense_units, activation='relu', name='dense_elmo')(y)
+        y = Dropout(dropout[1])(y)
+        
         output = Dense(1, activation='sigmoid', name='output')(y)
 
         tok_args = {

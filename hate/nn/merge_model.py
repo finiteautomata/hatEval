@@ -22,7 +22,7 @@ class MergeModel(BaseModel):
             merge_layer = outputs[0]
         output = Dense(1, activation='sigmoid')(merge_layer)
 
-        super().__init__(inputs=[inputs], outputs=[output], **kwargs)
+        super().__init__(inputs=inputs, outputs=[output], **kwargs)
 
     def preprocess_fit(self, X):
         for model in self.models:
