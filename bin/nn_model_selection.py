@@ -132,37 +132,40 @@ if __name__ == "__main__":
         print("Archivo nuevo")
         iters = []
 
-    for i, params in enumerate(param_list):
-        print(("*"*80+'\n')*3)
-        print("Iteración {}".format(i))
-        print(params)
-        orig_params = params.copy()
-        batch_size = params.pop('batch_size')
-        model = create_model(params, embedder=embedder)
-        checkpointer = ModelCheckpoint("models/nn/cv_{}.h5".format(len(iters)), save_best_only=True, monitor='val_acc', verbose=0)
-        early_stopper = EarlyStopping(monitor='val_loss', patience=15)
-        history = model.fit(X_train, y_train,  callbacks=[checkpointer, early_stopper],
-                  validation_data=(X_dev, y_dev), epochs=300, batch_size=batch_size)
-        iter_info = {
-            "number": i,
-            "params": params,
-            "history": history.history,
-            "val_acc": max(history.history['val_acc']),
-            "val_loss": min(history.history['val_loss']),
-            "no_epochs": len(history.history['val_acc']),
-        }
+    try:
+        for i, params in enumerate(param_list):
+            print(("*"*80+'\n')*3)
+            print("Iteración {}".format(i))
+            print(params)
+            orig_params = params.copy()
+            batch_size = params.pop('batch_size')
+            model = create_model(params, embedder=embedder)
+            checkpointer = ModelCheckpoint("models/nn/cv_{}.h5".format(len(iters)), save_best_only=True, monitor='val_acc', verbose=0)
+            early_stopper = EarlyStopping(monitor='val_loss', patience=15)
+            history = model.fit(X_train, y_train,  callbacks=[checkpointer, early_stopper],
+                      validation_data=(X_dev, y_dev), epochs=300, batch_size=batch_size)
+            iter_info = {
+                "number": i,
+                "params": params,
+                "history": history.history,
+                "val_acc": max(history.history['val_acc']),
+                "val_loss": min(history.history['val_loss']),
+                "no_epochs": len(history.history['val_acc']),
+            }
 
-        iters.append(iter_info)
-        K.clear_session()
-        del model
-        del checkpointer
-        del history
-        del early_stopper
-        gc.collect()
-        K.clear_session()
+            iters.append(iter_info)
+            K.clear_session()
+            del model
+            del checkpointer
+            del history
+            del early_stopper
+            gc.collect()
+            K.clear_session()
+    except:
+        print("Nos quedamos sin memoria?")
 
     with open(output_path, "wb+") as f:
         pickle.dump(iters, f)
 
     print("Salvamos {} iteraciones ({} nuevas) en {}".format(
-          len(iters), no_iter, output_path))
+          len(iters), i, output_path))
