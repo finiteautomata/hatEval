@@ -34,9 +34,21 @@ class CharModel(BaseModel):
         x = Dropout(dropout[1])(x)
         output = Dense(1, activation='sigmoid')(x)
 
+        tok_args = {
+            "preserve_case": False,
+            "deaccent": True,
+            "reduce_len": True,
+            "strip_handles": False,
+            "stem": True,
+            "alpha_only": False
+        }
+
+
+        tok_args.update(tokenize_args)
+
         super().__init__(
             inputs=[input_char], outputs=[output],
-            tokenize_args=tokenize_args, **kwargs)
+            tokenize_args=tok_args, **kwargs)
 
     def _preprocess_text(self, X):
         tokens = map(self._tokenizer.tokenize, X)
