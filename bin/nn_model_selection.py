@@ -17,6 +17,7 @@ import pickle
 from operator import mul
 from docopt import docopt
 from functools import reduce
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 from elmoformanylangs import Embedder
 from sklearn.model_selection import ParameterSampler
 from keras.layers import CuDNNGRU, CuDNNLSTM
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     print("Cantidad de iteraciones = {}".format(no_iter))
     param_list = list(ParameterSampler(param_space, no_iter))
 
-    embedder = 1# Embedder("models/elmo/es/")
+    embedder = Embedder("models/elmo/es/")
     try:
         with open(output_path, "rb") as f:
             iters = pickle.load(f)
@@ -131,8 +132,9 @@ if __name__ == "__main__":
         orig_params = params.copy()
         batch_size = params.pop('batch_size')
         model = create_model(params, embedder=embedder)
+	checkpointer = ModelCheckpoint("models/nn/cv_{}.h5", save_best_only=True, monitor='val_acc', verbose=0)
         early_stopper = EarlyStopping(monitor='val_loss', patience=15)
-        history = merge_model.fit(X_train, y_train,  callbacks=[early_stopper],
+        history = merge_model.fit(X_train, y_train,  callbacks=[checkpointer, early_stopper],
                   validation_data=(X_dev, y_dev), epochs=300, batch_size=batch_size)
         iter_info = {
             "number": i,
