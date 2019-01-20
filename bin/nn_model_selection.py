@@ -66,10 +66,9 @@ def create_model(params, embedder):
               optimizer=Adam(**optimizer_args),
               metrics=['accuracy'])
 
-    print(params.keys())
     assert(len(params) == 0)
 
-    return model
+    return merge_model
 
 
 if __name__ == "__main__":
@@ -102,7 +101,7 @@ if __name__ == "__main__":
         "char__alpha_only": [True, False],
         "char__stem": [True, False],
         "batch_size": [32, 64, 96],
-        "bow__num_words": [3000, 4000, 4500],
+        "bow__num_words": [2500, 3500, 4300],
         "dense_last_layer": [32, 64, 128, 256],
     }
 
