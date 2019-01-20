@@ -14,6 +14,9 @@ import csv
 import numpy as np
 import pandas as pd
 import pickle
+import gc
+from numba import cuda
+from keras import backend as K
 from operator import mul
 from docopt import docopt
 from functools import reduce
@@ -124,16 +127,19 @@ if __name__ == "__main__":
     try:
         with open(output_path, "rb") as f:
             iters = pickle.load(f)
-            print("Cargamos {} iteraciones previas")
+            print("Cargamos {} iteraciones previas".format(len(iters)))
     except FileNotFoundError:
         print("Archivo nuevo")
         iters = []
 
     for i, params in enumerate(param_list):
+        print(("*"*80+'\n')*3)
+        print("Iteración {}".format(i))
+        print(params)
         orig_params = params.copy()
         batch_size = params.pop('batch_size')
         model = create_model(params, embedder=embedder)
-        checkpointer = ModelCheckpoint("models/nn/cv_{}.h5", save_best_only=True, monitor='val_acc', verbose=0)
+        checkpointer = ModelCheckpoint("models/nn/cv_{}.h5".format(len(iters)), save_best_only=True, monitor='val_acc', verbose=0)
         early_stopper = EarlyStopping(monitor='val_loss', patience=15)
         history = model.fit(X_train, y_train,  callbacks=[checkpointer, early_stopper],
                   validation_data=(X_dev, y_dev), epochs=300, batch_size=batch_size)
@@ -147,6 +153,13 @@ if __name__ == "__main__":
         }
 
         iters.append(iter_info)
+        K.clear_session()
+        del model
+        del checkpointer
+        del history
+        del early_stopper
+        gc.collect()
+        K.clear_session()
 
     with open(output_path, "wb+") as f:
         pickle.dump(iters, f)
