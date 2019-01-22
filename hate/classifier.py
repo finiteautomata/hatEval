@@ -164,10 +164,9 @@ class HateClassifier(object):
             self._test_binarize = test_binarize
 
             emb_params = emb_params or default_emb_params
-            self._e_vect = e_vect = embeddings[emb](
-                tokenizer=self.build_emb_tokenizer(),
-                **emb_params,
-            )
+            if 'tokenizer' not in emb_params:
+                emb_params['tokenizer'] = self.build_emb_tokenizer()
+            self._e_vect = e_vect = embeddings[emb](**emb_params)
             vects.append(('emb_vect', e_vect))
             transformer_weights['emb_vect'] = 1.0
         else:
