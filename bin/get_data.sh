@@ -43,3 +43,21 @@ ENGLISH_A_TEST_FILE="$DATA_DIR/en/evaluation_english_a.zip"
 wget $ENGLISH_EVALUATION_A -O $ENGLISH_A_TEST_FILE
 7z e $ENGLISH_A_TEST_FILE -o"$DATA_DIR/en" -p$ENGLISH_PASS
 rm $ENGLISH_A_TEST_FILE
+
+# Get Reference Data
+
+SPANISH_REFERENCE_A="https://github.com/msang/hateval/raw/master/reference_test_es.zip"
+SPANISH_A_REFERENCE_FILE="$DATA_DIR/es/reference_es.zip"
+wget $SPANISH_REFERENCE_A -O $SPANISH_A_REFERENCE_FILE
+7z e $SPANISH_A_REFERENCE_FILE -o"$DATA_DIR/es" -p$SPANISH_PASS
+mv "$DATA_DIR/es/es.tsv" "$DATA_DIR/es/reference_es.tsv"
+rm $SPANISH_A_REFERENCE_FILE
+
+ENGLISH_REFERENCE_A="https://github.com/msang/hateval/raw/master/reference_test_en.zip"
+ENGLISH_A_REFERENCE_FILE="$DATA_DIR/en/reference_en.zip"
+wget $ENGLISH_REFERENCE_A -O $ENGLISH_A_REFERENCE_FILE
+7z e $ENGLISH_A_REFERENCE_FILE -o"$DATA_DIR/en" -p$ENGLISH_PASS
+mv "$DATA_DIR/en/en.tsv" "$DATA_DIR/en/reference_en.tsv"
+rm $ENGLISH_A_REFERENCE_FILE
+
+
