@@ -63,7 +63,7 @@ class SentenceVectorizer(BaseVectorizer):
                 tokens = sorted(set(tokens))
             tweet = ' '.join(tokens)
         else:
-            tweet = x.replace('\n', ' ')
+            tweet = tweet.replace('\n', ' ')
 
         return tweet
 

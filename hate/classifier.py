@@ -111,8 +111,7 @@ class HateClassifier(object):
                  boc=False, boc_params=None,
                  svd=False, svd_params=None,
                  emb=False, emb_params=None,
-                 clf='svm', clf_params=None,
-                 test_binarize=True):
+                 clf='svm', clf_params=None):
         """
         lang -- language ('en' or 'es') (default: 'en').
         bow -- whether to use bag-of-words (default: True).
@@ -125,7 +124,6 @@ class HateClassifier(object):
         emb_params -- embedding vectorizer parameters.
         clf -- classifying model, one of 'svm', 'maxent', 'mnb' (default: 'svm').
         clf_params -- classifier parameters.
-        test_binarize -- binarize embeddings only on test (not on train).
         """
         self._lang = lang
         self._clf = clf
@@ -160,18 +158,19 @@ class HateClassifier(object):
                 ('svd', TruncatedSVD(**svd_params)),
             ]))]
 
-        if emb:
-            self._test_binarize = test_binarize
-
-            emb_params = emb_params or default_emb_params
-            self._e_vect = e_vect = embeddings[emb](
-                tokenizer=self.build_emb_tokenizer(),
-                **emb_params,
-            )
-            vects.append(('emb_vect', e_vect))
-            transformer_weights['emb_vect'] = 1.0
+        if emb is None:
+            embs, emb_paramss = [], []
+        elif not isinstance(emb, list):
+            embs, emb_paramss = [emb], [emb_params]
         else:
-            self._e_vect = None
+            embs, emb_paramss = emb, emb_params
+        for emb, emb_params in zip(embs, emb_paramss):
+            emb_params = emb_params or default_emb_params
+            if 'tokenizer' not in emb_params:
+                emb_params['tokenizer'] = self.build_emb_tokenizer()
+            e_vect = embeddings[emb](**emb_params)
+            vects.append(('{}_vect'.format(emb), e_vect))
+            transformer_weights['{}_vect'.format(emb)] = 1.0
 
         if len(vects) == 1:
             vect = vects[0][1]
@@ -196,14 +195,7 @@ class HateClassifier(object):
         return default_clf_params.get(self._clf, {})
 
     def fit(self, X, y, sample_weight=None):
-        if self._e_vect and self._test_binarize:
-            # turn off binarization on train
-            bin = self._e_vect._binarize
-            self._e_vect._binarize = False
         self._pipeline.fit(X, y, clf__sample_weight=sample_weight)
-        if self._e_vect and self._test_binarize:
-            # restore binarization value
-            self._e_vect._binarize = bin
 
     def predict(self, X):
         return self._pipeline.predict(X)
