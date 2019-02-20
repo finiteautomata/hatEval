@@ -158,15 +158,19 @@ class HateClassifier(object):
                 ('svd', TruncatedSVD(**svd_params)),
             ]))]
 
-        if emb:
+        if emb is None:
+            embs, emb_paramss = [], []
+        elif not isinstance(emb, list):
+            embs, emb_paramss = [emb], [emb_params]
+        else:
+            embs, emb_paramss = emb, emb_params
+        for emb, emb_params in zip(embs, emb_paramss):
             emb_params = emb_params or default_emb_params
             if 'tokenizer' not in emb_params:
                 emb_params['tokenizer'] = self.build_emb_tokenizer()
-            self._e_vect = e_vect = embeddings[emb](**emb_params)
-            vects.append(('emb_vect', e_vect))
-            transformer_weights['emb_vect'] = 1.0
-        else:
-            self._e_vect = None
+            e_vect = embeddings[emb](**emb_params)
+            vects.append(('{}_vect'.format(emb), e_vect))
+            transformer_weights['{}_vect'.format(emb)] = 1.0
 
         if len(vects) == 1:
             vect = vects[0][1]
