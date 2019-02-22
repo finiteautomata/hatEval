@@ -15,9 +15,11 @@ class BowModel(BaseModel):
         # Build the graph
         input_bow = Input(shape=(num_words, ), name="BoW_Input")
         z = Dense(dense_units[0], activation='relu')(input_bow)
-        z = Dropout(dropout[0])(z)
+        if dropout[0] > 0:
+            z = Dropout(dropout[0])(z)
         z = Dense(dense_units[1], activation='relu')(z)
-        z = Dropout(dropout[1])(z)
+        if dropout[1] > 0:
+            z = Dropout(dropout[1])(z)
         output = Dense(1, activation='sigmoid')(z)
 
         tok_args = {

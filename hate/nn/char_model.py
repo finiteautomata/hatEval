@@ -29,9 +29,11 @@ class CharModel(BaseModel):
 
         x = MaxPooling1D(pool_size=pooling_size)(x)
         x = Bidirectional(recursive_class(recursive_units))(x)
-        x = Dropout(dropout[0])(x)
+        if dropout[0] > 0:
+            x = Dropout(dropout[0])(x)
         x = Dense(dense_units, activation='relu')(x)
-        x = Dropout(dropout[1])(x)
+        if dropout[1] > 0:
+            x = Dropout(dropout[1])(x)
         output = Dense(1, activation='sigmoid')(x)
 
         tok_args = {

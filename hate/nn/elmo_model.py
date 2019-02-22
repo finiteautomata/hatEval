@@ -20,11 +20,13 @@ class ElmoModel(BaseModel):
         # Build the graph
         input_elmo = Input(shape=(max_len, self._elmo_dim), name="Elmo_Input")
         y = Bidirectional(recursive_class(lstm_units))(input_elmo)
-        y = Dropout(dropout[0])(y)
+        if dropout[0] > 0:
+            y = Dropout(dropout[0])(y)
         
         if dense_units > 0:
             y = Dense(dense_units, activation='relu', name='dense_elmo')(y)
-            y = Dropout(dropout[1])(y)
+            if dropout[1] > 0:
+                y = Dropout(dropout[1])(y)
 
         output = Dense(1, activation='sigmoid', name='output')(y)
 
