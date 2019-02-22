@@ -30,4 +30,34 @@ mv $DATA_DIR/public_development_en $DATA_DIR/en
 rm $SPANISH_A_ZIP
 rm $ENGLISH_A_ZIP
 
-#wget https://competitions.codalab.org/my/datasets/download/70f24fdb-2df2-4a9c-9bec-2ec00e2f5554 -O "$DATA_DIR/dev_english_a.zip"
+# Get Evaluation Data
+
+SPANISH_EVALUATION_A="https://competitions.codalab.org/my/datasets/download/4d4a0bfb-7568-4a09-8e68-45c39dc2e7c6"
+SPANISH_A_TEST_FILE="$DATA_DIR/es/evaluation_spanish_a.zip"
+wget $SPANISH_EVALUATION_A -O $SPANISH_A_TEST_FILE
+7z e $SPANISH_A_TEST_FILE -o"$DATA_DIR/es" -p$SPANISH_PASS
+rm $SPANISH_A_TEST_FILE
+
+ENGLISH_EVALUATION_A="https://competitions.codalab.org/my/datasets/download/c50d8652-0fcb-4712-8a9f-69238222e313"
+ENGLISH_A_TEST_FILE="$DATA_DIR/en/evaluation_english_a.zip"
+wget $ENGLISH_EVALUATION_A -O $ENGLISH_A_TEST_FILE
+7z e $ENGLISH_A_TEST_FILE -o"$DATA_DIR/en" -p$ENGLISH_PASS
+rm $ENGLISH_A_TEST_FILE
+
+# Get Reference Data
+
+SPANISH_REFERENCE_A="https://github.com/msang/hateval/raw/master/reference_test_es.zip"
+SPANISH_A_REFERENCE_FILE="$DATA_DIR/es/reference_es.zip"
+wget $SPANISH_REFERENCE_A -O $SPANISH_A_REFERENCE_FILE
+7z e $SPANISH_A_REFERENCE_FILE -o"$DATA_DIR/es" -p$SPANISH_PASS
+mv "$DATA_DIR/es/es.tsv" "$DATA_DIR/es/reference_es.tsv"
+rm $SPANISH_A_REFERENCE_FILE
+
+ENGLISH_REFERENCE_A="https://github.com/msang/hateval/raw/master/reference_test_en.zip"
+ENGLISH_A_REFERENCE_FILE="$DATA_DIR/en/reference_en.zip"
+wget $ENGLISH_REFERENCE_A -O $ENGLISH_A_REFERENCE_FILE
+7z e $ENGLISH_A_REFERENCE_FILE -o"$DATA_DIR/en" -p$ENGLISH_PASS
+mv "$DATA_DIR/en/en.tsv" "$DATA_DIR/en/reference_en.tsv"
+rm $ENGLISH_A_REFERENCE_FILE
+
+

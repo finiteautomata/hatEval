@@ -1,4 +1,4 @@
-from .preprocessing import Tokenizer
+from .base_model import BaseModel
 from keras.preprocessing.text import Tokenizer as KerasTokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import (
@@ -8,16 +8,15 @@ from keras.layers import (
 import keras
 
 
-class CharModel(keras.Model):
-    def __init__(self, vocab_size, max_charlen,
+class CharModel(BaseModel):
+    def __init__(self, vocab_size=200, max_charlen=250,
                  tokenize_args={}, embedding_dim=64, filters=128,
                  kernel_size=7, pooling_size=3,
                  recursive_class=LSTM, recursive_units=128,
-                 dense_units=64, dropout=[0.75, 0.50]):
+                 dense_units=64, dropout=[0.75, 0.50], **kwargs):
 
         self._max_charlen = max_charlen
         self._vocab_size = vocab_size
-        self._tokenizer = Tokenizer(**tokenize_args)
         self._char_tokenizer = KerasTokenizer(
             num_words=vocab_size, char_level=True
         )
@@ -30,47 +29,42 @@ class CharModel(keras.Model):
 
         x = MaxPooling1D(pool_size=pooling_size)(x)
         x = Bidirectional(recursive_class(recursive_units))(x)
-        x = Dropout(dropout[0])(x)
+        if dropout[0] > 0:
+            x = Dropout(dropout[0])(x)
         x = Dense(dense_units, activation='relu')(x)
-        x = Dropout(dropout[1])(x)
+        if dropout[1] > 0:
+            x = Dropout(dropout[1])(x)
         output = Dense(1, activation='sigmoid')(x)
 
-        super().__init__(inputs=[input_char], outputs=[output])
+        tok_args = {
+            "preserve_case": False,
+            "deaccent": True,
+            "reduce_len": True,
+            "strip_handles": False,
+            "stem": True,
+            "alpha_only": False
+        }
 
-    def _preprocess(self, X):
+
+        tok_args.update(tokenize_args)
+
+        super().__init__(
+            inputs=[input_char], outputs=[output],
+            tokenize_args=tok_args, **kwargs)
+
+    def _preprocess_text(self, X):
         tokens = map(self._tokenizer.tokenize, X)
         instances = [" ".join(seq_tokens) for seq_tokens in tokens]
 
         return instances
 
-    def fit(self, X, y, validation_data=None, **kwargs):
-        text_train = self._preprocess(X)
+    def preprocess_fit(self, X):
+        text_train = self._preprocess_text(X)
 
         self._char_tokenizer.fit_on_texts(text_train)
 
-        X_train = self._char_tokenizer.texts_to_sequences(text_train)
-        X_train = pad_sequences(X_train, self._max_charlen)
+    def preprocess_transform(self, X):
+        X_transf = self._preprocess_text(X)
+        X_transf = self._char_tokenizer.texts_to_sequences(X_transf)
 
-        val_data = None
-        if validation_data:
-            text_val = self._preprocess(validation_data[0])
-            X_val = self._char_tokenizer.texts_to_sequences(text_val)
-            X_val = pad_sequences(X_val, self._max_charlen)
-            y_val = validation_data[1]
-            val_data = (X_val, y_val)
-
-        super().fit(X_train, y, validation_data=val_data, **kwargs)
-
-    def evaluate(self, X, y=None, **kwargs):
-        X = self._preprocess(X)
-        X = self._char_tokenizer.texts_to_sequences(X)
-        X = pad_sequences(X, self._max_charlen)
-
-        return super().evaluate(X, y, **kwargs)
-
-    def predict(self, X, **kwargs):
-        X = self._preprocess(X)
-        X = self._char_tokenizer.texts_to_sequences(X)
-        X = pad_sequences(X, self._max_charlen)
-
-        return super().predict(X, **kwargs)
+        return pad_sequences(X_transf, self._max_charlen)

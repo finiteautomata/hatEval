@@ -76,14 +76,26 @@ def print_evaluation(model, tweets, y):
     loss, accuracy = model.evaluate(tweets, y)
     y_pred = model.predict(tweets) >= 0.5
 
-    precision, recall, f1 = calculate_metrics(
+    precision_1, recall_1, f1_1 = calculate_metrics(
         y, y_pred
     )
-    print("Loss        : {:.4f}".format(loss))
-    print("Accuracy    : {:.4f}".format(accuracy))
-    print("Precision   : {:.4f}".format(precision))
-    print("Recall      : {:.4f}".format(recall))
-    print("F1          : {:.4f}".format(f1))
+    
+    precision_0, recall_0, f1_0 = calculate_metrics(
+        1-y, 1-y_pred
+    )
+    print("Loss           : {:.4f}".format(loss))
+    print("Accuracy       : {:.4f}".format(accuracy))
+    print("Precision(1)   : {:.4f}".format(precision_1))
+    print("Precision(1)   : {:.4f}".format(precision_0))
+    print("Precision(avg) : {:.4f}\n".format((precision_1 + precision_0)/2))
+    
+    print("Recall(1)      : {:.4f}".format(recall_1))
+    print("Recall(0)      : {:.4f}".format(recall_0))
+    print("Recall(avg)    : {:.4f}\n".format(0.5*(recall_1 + recall_0)))
+    
+    print("F1(1)          : {:.4f}".format(f1_1))
+    print("F1(0)          : {:.4f}".format(f1_0))
+    print("F1(avg)        : {:.4f}".format(0.5*(f1_0 + f1_1)))
 
 
     
