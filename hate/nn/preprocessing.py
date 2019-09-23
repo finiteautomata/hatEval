@@ -7,7 +7,7 @@ class Tokenizer:
     """
     Tokenizer for tweets based on NLTK's Tokenizer + Stemming
     """
-    def __init__(self, stem=False, deaccent=False, alpha_only=False,
+    def __init__(self, stem=False, deaccent=False, alpha_only=False, strip_hash=False,
                  language='spanish', **kwargs):
         self._deaccent = deaccent
         self._alpha_only = alpha_only
@@ -18,6 +18,8 @@ class Tokenizer:
 
         tokenizer_args = {"reduce_len": True}
         tokenizer_args.update(**kwargs)
+        
+        self._strip_hash = strip_hash
 
         self._tokenizer = TweetTokenizer(**tokenizer_args)
 
@@ -35,7 +37,7 @@ class Tokenizer:
 
         for token in tokens:
             tok = None
-            if token[0] == "#":
+            if token[0] == "#" and self._strip_hash:
                 tok = self.stem(token[1:])
             elif token[0] == "@":
                 tok = "@user"

@@ -3,38 +3,40 @@ from .base_model import BaseModel
 import numpy as np
 from keras.layers import (
     Input, Embedding, Dense, Dropout, Bidirectional, LSTM,
-    MaxPooling1D, Conv1D,
+    GlobalMaxPooling1D, Conv1D, CuDNNGRU, Concatenate
 )
 import keras
 from elmoformanylangs import Embedder
 
 
 class ElmoModel(BaseModel):
-    def __init__(self, max_len, embedder, tokenize_args={},
-                 recursive_class=LSTM, lstm_units=128, dropout=[0.75, 0.50],
-                 dense_units=128, **kwargs):
+    def __init__(self, max_len, fasttext_model, elmo_embedder,
+                 tokenize_args={}, 
+                 recursive_class=CuDNNGRU, rnn_units=256, dropout=0.75,
+                 **kwargs):
 
         self._max_len = max_len
-        self._embedder = embedder
+        self._embedder = fasttext_model
+        self._elmo_embedder = elmo_embedder
         self._elmo_dim = 1024
         # Build the graph
-        input_elmo = Input(shape=(max_len, self._elmo_dim), name="Elmo_Input")
-        y = Bidirectional(recursive_class(lstm_units))(input_elmo)
-        if dropout[0] > 0:
-            y = Dropout(dropout[0])(y)
         
-        if dense_units > 0:
-            y = Dense(dense_units, activation='relu', name='dense_elmo')(y)
-            if dropout[1] > 0:
-                y = Dropout(dropout[1])(y)
+        embedding_size = fasttext_model.get_word_vector("pepe").shape[0]
+        
+        elmo_input = Input(shape=(max_len, self._elmo_dim))
+        emb_input = Input(shape=(max_len, embedding_size))
 
-        output = Dense(1, activation='sigmoid', name='output')(y)
-
+        x = Concatenate()([elmo_input, emb_input])
+        x = Bidirectional(CuDNNGRU(rnn_units, return_sequences=True))(x)
+        x = Dropout(dropout)(x)
+        x = GlobalMaxPooling1D()(x)
+        output = Dense(1, activation='sigmoid')(x)
+        
         tok_args = {
             "preserve_case": False,
             "deaccent": False,
             "reduce_len": True,
-            "strip_handles": False,
+            "strip_handles": True,
             "alpha_only": True,
             "stem": False
         }
@@ -42,24 +44,31 @@ class ElmoModel(BaseModel):
         tok_args.update(tokenize_args)
 
         super().__init__(
-            inputs=[input_elmo], outputs=[output],
+            inputs=[elmo_input, emb_input], outputs=[output],
             tokenize_args=tok_args, **kwargs
         )
 
     def preprocess_fit(self, X):
         return
+    
+    def _preprocess_tweet(self, tweet):
+        tokens = self._tokenizer.tokenize(tweet)
+
+        if len(tokens) >= self._max_len:
+            tokens = tokens[:self._max_len]
+        else:
+            tokens = tokens + [''] * (self._max_len - len(tokens))
+        return tokens
+
+    def _get_embeddings(self, toks):
+        return [self._embedder.get_word_vector(tok) for tok in toks]
+        
 
     def preprocess_transform(self, X):
-        list_of_tokens = [self._tokenizer.tokenize(t) for t in X]
+        X_tokenized = [self._preprocess_tweet(tweet) for tweet in X]
 
-        padded_tokens = []
-        for tokens in list_of_tokens:
-            if len(tokens) >= self._max_len:
-                tokens = tokens[:self._max_len]
-            else:
-                tokens = tokens + [''] * (self._max_len - len(tokens))
-
-            padded_tokens.append(tokens)
-
-        elmo_embeddings = self._embedder.sents2elmo(padded_tokens)
-        return np.array(elmo_embeddings)
+        elmo_embeddings = self._elmo_embedder.sents2elmo(X_tokenized)
+        fasttext_embeddings = np.array([
+            self._get_embeddings(tweet) for tweet in X_tokenized
+        ])
+        return [np.array(elmo_embeddings), fasttext_embeddings]
