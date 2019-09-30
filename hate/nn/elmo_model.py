@@ -3,7 +3,7 @@ from .base_model import BaseModel
 import numpy as np
 from keras.layers import (
     Input, Embedding, Dense, Dropout, Bidirectional, LSTM,
-    GlobalMaxPooling1D, Conv1D, CuDNNGRU, Concatenate
+    GlobalMaxPooling1D, GlobalAveragePooling1D, Conv1D, CuDNNGRU, Concatenate
 )
 import keras
 from elmoformanylangs import Embedder
@@ -13,7 +13,7 @@ class ElmoModel(BaseModel):
     def __init__(self, max_len, fasttext_model, elmo_embedder,
                  tokenize_args={}, 
                  recursive_class=CuDNNGRU, rnn_units=256, dropout=0.75,
-                 **kwargs):
+                 pooling='max', **kwargs):
 
         self._max_len = max_len
         self._embedder = fasttext_model
@@ -27,9 +27,14 @@ class ElmoModel(BaseModel):
         emb_input = Input(shape=(max_len, embedding_size))
 
         x = Concatenate()([elmo_input, emb_input])
-        x = Bidirectional(CuDNNGRU(rnn_units, return_sequences=True))(x)
-        x = Dropout(dropout)(x)
-        x = GlobalMaxPooling1D()(x)
+        self.recursive_layer = Bidirectional(CuDNNGRU(rnn_units, return_sequences=True))(x)
+        x = Dropout(dropout)(self.recursive_layer)
+        if pooling == 'max':
+            x = GlobalMaxPooling1D()(x)
+        elif pooling == 'avg':
+            x = GlobalAveragePooling1D()(x)
+        else:
+            raise ValueError("pooling should be 'max' or 'avg'")
         output = Dense(1, activation='sigmoid')(x)
         
         tok_args = {
