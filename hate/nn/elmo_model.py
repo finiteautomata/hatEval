@@ -23,11 +23,13 @@ class ElmoModel(BaseModel):
         
         embedding_size = fasttext_model.get_word_vector("pepe").shape[0]
         
-        elmo_input = Input(shape=(max_len, self._elmo_dim))
-        emb_input = Input(shape=(max_len, embedding_size))
+        elmo_input = Input(shape=(max_len, self._elmo_dim), name="Elmo")
+        emb_input = Input(shape=(max_len, embedding_size), name="Fasttext")
 
         x = Concatenate()([elmo_input, emb_input])
-        self.recursive_layer = Bidirectional(CuDNNGRU(rnn_units, return_sequences=True))(x)
+        self.recursive_layer = Bidirectional(
+            recursive_class(rnn_units, return_sequences=True),
+            name="BiRNN")(x)
         x = Dropout(dropout)(self.recursive_layer)
         if pooling == 'max':
             x = GlobalMaxPooling1D()(x)
