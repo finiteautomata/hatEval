@@ -13,7 +13,7 @@ class ElmoModel(BaseModel):
     def __init__(self, max_len, fasttext_model, elmo_embedder,
                  tokenize_args={}, 
                  recursive_class=CuDNNGRU, rnn_units=256, dropout=0.75,
-                 pooling='max', **kwargs):
+                 pooling='max', bidirectional=False, **kwargs):
 
         self._max_len = max_len
         self._embedder = fasttext_model
@@ -27,9 +27,12 @@ class ElmoModel(BaseModel):
         emb_input = Input(shape=(max_len, embedding_size), name="Fasttext")
 
         x = Concatenate()([elmo_input, emb_input])
-        self.recursive_layer = Bidirectional(
-            recursive_class(rnn_units, return_sequences=True),
-            name="BiRNN")(x)
+        rec_layer = recursive_class(rnn_units, return_sequences=True)
+
+        if bidirectional:
+            rec_layer = Bidirectional(rec_layer)
+        self.recursive_layer = rec_layer(x)
+
         x = Dropout(dropout)(self.recursive_layer)
         if pooling == 'max':
             x = GlobalMaxPooling1D()(x)
