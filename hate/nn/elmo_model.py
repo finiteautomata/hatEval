@@ -11,7 +11,7 @@ from elmoformanylangs import Embedder
 
 class ElmoModel(BaseModel):
     def __init__(self, max_len, fasttext_model, elmo_embedder,
-                 tokenize_args={}, 
+                 tokenize_args={},
                  recursive_class=CuDNNGRU, rnn_units=256, dropout=0.75,
                  pooling='max', bidirectional=False, **kwargs):
 
@@ -20,9 +20,9 @@ class ElmoModel(BaseModel):
         self._elmo_embedder = elmo_embedder
         self._elmo_dim = 1024
         # Build the graph
-        
+
         embedding_size = fasttext_model.get_word_vector("pepe").shape[0]
-        
+
         elmo_input = Input(shape=(max_len, self._elmo_dim), name="Elmo")
         emb_input = Input(shape=(max_len, embedding_size), name="Fasttext")
 
@@ -41,7 +41,7 @@ class ElmoModel(BaseModel):
         else:
             raise ValueError("pooling should be 'max' or 'avg'")
         output = Dense(1, activation='sigmoid')(x)
-        
+
         tok_args = {
             "preserve_case": False,
             "deaccent": False,
@@ -53,6 +53,11 @@ class ElmoModel(BaseModel):
 
         tok_args.update(tokenize_args)
 
+        self.display_name = "{}{} with {} pooling consuming ELMo + FastText".format(
+            'bi-' if bidirectional else '',
+            type(recursive_class(50)).__name__,
+            pooling,
+        )
         super().__init__(
             inputs=[elmo_input, emb_input], outputs=[output],
             tokenize_args=tok_args, **kwargs
@@ -60,7 +65,7 @@ class ElmoModel(BaseModel):
 
     def preprocess_fit(self, X):
         return
-    
+
     def _preprocess_tweet(self, tweet):
         tokens = self._tokenizer.tokenize(tweet)
 
@@ -72,7 +77,7 @@ class ElmoModel(BaseModel):
 
     def _get_embeddings(self, toks):
         return [self._embedder.get_word_vector(tok) for tok in toks]
-        
+
 
     def preprocess_transform(self, X):
         X_tokenized = [self._preprocess_tweet(tweet) for tweet in X]
