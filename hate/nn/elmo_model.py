@@ -6,13 +6,14 @@ from keras.layers import (
     GlobalMaxPooling1D, GlobalAveragePooling1D, Conv1D, CuDNNGRU, Concatenate
 )
 import keras
+from keras import regularizers
 from elmoformanylangs import Embedder
 
 
 class ElmoModel(BaseModel):
     def __init__(self, max_len, fasttext_model, elmo_embedder,
                  tokenize_args={},
-                 recursive_class=CuDNNGRU, rnn_units=256, dropout=0.75,
+                 recursive_class=CuDNNGRU, rnn_units=256, dropout=0.75, l1_regularization=0.00,
                  pooling='max', bidirectional=False, **kwargs):
 
         self._max_len = max_len
@@ -27,7 +28,16 @@ class ElmoModel(BaseModel):
         emb_input = Input(shape=(max_len, embedding_size), name="Fasttext")
 
         x = Concatenate()([elmo_input, emb_input])
-        rec_layer = recursive_class(rnn_units, return_sequences=True)
+        recursive_args = {
+            "return_sequences": True
+        }
+
+        if l1_regularization > .0:
+            print("Using L1 regularization")
+            recursive_args["kernel_regularizer"]= regularizers.l2(l1_regularization)
+
+        rec_layer = recursive_class(
+            rnn_units, **recursive_args)
 
         if bidirectional:
             rec_layer = Bidirectional(rec_layer)
