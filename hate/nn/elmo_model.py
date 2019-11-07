@@ -22,12 +22,21 @@ class ElmoModel(BaseModel):
         self._elmo_dim = 1024
         # Build the graph
 
-        embedding_size = fasttext_model.get_word_vector("pepe").shape[0]
+        inputs = []
 
-        elmo_input = Input(shape=(max_len, self._elmo_dim), name="Elmo")
-        emb_input = Input(shape=(max_len, embedding_size), name="Fasttext")
+        if elmo_embedder:
+            elmo_input = Input(shape=(max_len, self._elmo_dim), name="Elmo")
+            inputs.append(elmo_input)
+        if fasttext_model:
+            embedding_size = fasttext_model.get_word_vector("pepe").shape[0]
+            emb_input = Input(shape=(max_len, embedding_size), name="Fasttext")
+            inputs.append(emb_input)
 
-        x = Concatenate()([elmo_input, emb_input])
+        if len(inputs) > 1:
+            x = Concatenate()(inputs)
+        else:
+            x = inputs[0]
+
         recursive_args = {
             "return_sequences": True
         }
@@ -41,15 +50,17 @@ class ElmoModel(BaseModel):
 
         if bidirectional:
             rec_layer = Bidirectional(rec_layer)
-        self.recursive_layer = rec_layer(x)
+        x = self.recursive_layer = rec_layer(x)
 
-        x = Dropout(dropout)(self.recursive_layer)
+
         if pooling == 'max':
             x = GlobalMaxPooling1D()(x)
         elif pooling == 'avg':
             x = GlobalAveragePooling1D()(x)
         else:
             raise ValueError("pooling should be 'max' or 'avg'")
+        x = Dropout(dropout)(x)
+
         output = Dense(1, activation='sigmoid')(x)
 
         tok_args = {
@@ -63,13 +74,14 @@ class ElmoModel(BaseModel):
 
         tok_args.update(tokenize_args)
 
-        self.display_name = "{}{} with {} pooling consuming ELMo + FastText".format(
+        self.display_name = "{}{} with {} pooling consuming {}".format(
             'bi-' if bidirectional else '',
             type(recursive_class(50)).__name__,
             pooling,
+            "+".join([i.name for i in inputs]),
         )
         super().__init__(
-            inputs=[elmo_input, emb_input], outputs=[output],
+            inputs=inputs, outputs=[output],
             tokenize_args=tok_args, **kwargs
         )
 
@@ -92,8 +104,13 @@ class ElmoModel(BaseModel):
     def preprocess_transform(self, X):
         X_tokenized = [self._preprocess_tweet(tweet) for tweet in X]
 
-        elmo_embeddings = self._elmo_embedder.sents2elmo(X_tokenized)
-        fasttext_embeddings = np.array([
-            self._get_embeddings(tweet) for tweet in X_tokenized
-        ])
-        return [np.array(elmo_embeddings), fasttext_embeddings]
+        ret = []
+
+        if self._elmo_embedder:
+            ret.append(np.array(self._elmo_embedder.sents2elmo(X_tokenized)))
+        if self._embedder:
+            fasttext_embeddings = np.array([
+                self._get_embeddings(tweet) for tweet in X_tokenized
+            ])
+            ret.append(fasttext_embeddings)
+        return ret
