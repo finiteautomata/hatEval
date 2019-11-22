@@ -59,7 +59,9 @@ class ElmoModel(BaseModel):
             x = GlobalAveragePooling1D()(x)
         else:
             raise ValueError("pooling should be 'max' or 'avg'")
-        x = Dropout(dropout)(x)
+
+        if dropout > 0:
+            x = Dropout(dropout)(x)
 
         output = Dense(1, activation='sigmoid')(x)
 
