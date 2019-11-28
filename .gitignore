@@ -106,3 +106,4 @@ models/*
 notebooks/**/*.png
 notebooks/**/*.zip
 notebooks/**/*.tsv
+notebooks/**/*.json
