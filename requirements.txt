@@ -114,7 +114,7 @@ ptyprocess==0.6.0
 py==1.7.0
 pybind11==2.2.4
 pydot==1.4.1
-Pygments==2.3.0
+Pygments==2.7.4
 pymongo==3.7.2
 pyparsing==2.3.0
 pyrsistent==0.15.4
