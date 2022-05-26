@@ -168,7 +168,7 @@ tox==3.6.1
 tqdm==4.28.1
 traitlets==4.3.2
 translate==3.5.0
-ujson==1.35
+ujson==5.2.0
 Unidecode==1.0.23
 urllib3==1.24.1
 virtualenv==16.2.0
